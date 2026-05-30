@@ -72,4 +72,11 @@ if(ENABLE_DIFOP_PARSE)
   add_definitions("-DENABLE_DIFOP_PARSE")
 endif()
 
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/app)
+add_executable(main
+  ${CMAKE_CURRENT_LIST_DIR}/app/main.cpp)
+
+target_include_directories(main PRIVATE
+  ${DRIVER_INCLUDE_DIRS})
+
+target_link_libraries(main PRIVATE
+  ${EXTERNAL_LIBS})
