@@ -32,7 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <rs_driver/common/rs_common.hpp>
+#include <common/rs_common.hpp>
 
 #include <cmath>
 

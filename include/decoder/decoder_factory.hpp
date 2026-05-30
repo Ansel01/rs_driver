@@ -32,40 +32,40 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <rs_driver/driver/input/input.hpp>
-#include <rs_driver/driver/input/input_sock.hpp>
+#include <decoder/decoder.hpp>
+#include <decoder/decoder_RSHELIOS.hpp>
 
 namespace robosense
 {
 namespace lidar
 {
 
-class InputFactory
+template <typename T_PointCloud>
+class DecoderFactory
 {
 public:
-  static std::shared_ptr<Input> createInput(InputType type, const RSInputParam& param,
-      double sec_to_delay, std::function<void(const uint8_t*, size_t)>& cb_feed_pkt);
+
+  static std::shared_ptr<Decoder<T_PointCloud>> createDecoder(
+      LidarType type, const RSDecoderParam& param);
 };
 
-inline std::shared_ptr<Input> InputFactory::createInput(InputType type, const RSInputParam& param,
-    double sec_to_delay, std::function<void(const uint8_t*, size_t)>& cb_feed_pkt)
+template <typename T_PointCloud>
+inline std::shared_ptr<Decoder<T_PointCloud>> DecoderFactory<T_PointCloud>::createDecoder(
+    LidarType type, const RSDecoderParam& param)
 {
-  std::shared_ptr<Input> input;
+  std::shared_ptr<Decoder<T_PointCloud>> ret_ptr;
 
-  switch(type)
+  switch (type)
   {
-    case InputType::ONLINE_LIDAR:
-      {
-        input = std::make_shared<InputSock>(param);
-      }
+    case LidarType::RSHELIOS:
+      ret_ptr = std::make_shared<DecoderRSHELIOS<T_PointCloud>>(param);
       break;
-
     default:
-      RS_ERROR << "Wrong Input Type " << type << "." << RS_REND;
+      RS_ERROR << "Only RSHELIOS LiDAR type is supported in this trimmed driver." << RS_REND;
       exit(-1);
   }
 
-  return input;
+  return ret_ptr;
 }
 
 }  // namespace lidar

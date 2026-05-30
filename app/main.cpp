@@ -1,10 +1,12 @@
-#include <rs_driver/api/lidar_driver.hpp>
+#include <lidar_driver.hpp>
 
 #ifdef ENABLE_PCL_POINTCLOUD
-#include <rs_driver/msg/pcl_point_cloud_msg.hpp>
+#include <msg/pcl_point_cloud_msg.hpp>
 #else
-#include <rs_driver/msg/point_cloud_msg.hpp>
+#include <msg/point_cloud_msg.hpp>
 #endif
+
+#include <memory>
 
 using namespace robosense::lidar;
 

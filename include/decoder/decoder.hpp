@@ -32,14 +32,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <rs_driver/common/error_code.hpp>
-#include <rs_driver/driver/driver_param.hpp>
-#include <rs_driver/driver/decoder/member_checker.hpp>
-#include <rs_driver/driver/decoder/trigon.hpp>
-#include <rs_driver/driver/decoder/section.hpp>
-#include <rs_driver/driver/decoder/basic_attr.hpp>
-#include <rs_driver/driver/decoder/split_strategy.hpp>
-#include "rs_driver/msg/imu_data_msg.hpp"
+#include <common/error_code.hpp>
+#include <driver_param.hpp>
+#include <decoder/member_checker.hpp>
+#include <decoder/trigon.hpp>
+#include <decoder/section.hpp>
+#include <decoder/basic_attr.hpp>
+#include <decoder/split_strategy.hpp>
+#include <msg/imu_data_msg.hpp>
 #ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES  // for VC++, required to use const M_IP in <math.h>
 #endif

@@ -32,8 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <rs_driver/common/rs_log.hpp>
-#include "rs_driver/msg/imu_data_msg.hpp"
+#include <common/rs_log.hpp>
+#include <msg/imu_data_msg.hpp>
 #include <string>
 #include <map>
 #include <cstring>

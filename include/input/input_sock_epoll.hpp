@@ -32,7 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <rs_driver/driver/input/input.hpp>
+#include <input/input.hpp>
 
 #include <unistd.h>
 #include <fcntl.h>

@@ -32,84 +32,40 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <rs_driver/driver/driver_param.hpp>
-#include <rs_driver/utility/buffer.hpp>
-
-#include <functional>
-#include <memory>
-#include <thread>
-#include <cstring>
-
-#define VLAN_HDR_LEN  4
-#define ETH_HDR_LEN   42
-#define ETH_LEN       (ETH_HDR_LEN + VLAN_HDR_LEN + 1500)
-#define IP_LEN        65536 
-#define UDP_HDR_LEN   8
+#include <input/input.hpp>
+#include <input/input_sock.hpp>
 
 namespace robosense
 {
 namespace lidar
 {
-class Input
+
+class InputFactory
 {
 public:
-  Input(const RSInputParam& input_param);
-
-  inline void regCallback(
-      const std::function<void(const Error&)>& cb_excep,
-      const std::function<std::shared_ptr<Buffer>(size_t)>& cb_get_pkt,
-      const std::function<void(std::shared_ptr<Buffer>, bool)>& cb_put_pkt);
-
-  virtual bool init() = 0;
-  virtual bool start() = 0;
-  virtual void stop();
-  virtual ~Input()
-  {
-  }
-
-protected:
-  inline void pushPacket(std::shared_ptr<Buffer> pkt, bool stuffed = true);
-
-  RSInputParam input_param_;
-  std::function<std::shared_ptr<Buffer>(size_t size)> cb_get_pkt_;
-  std::function<void(std::shared_ptr<Buffer>, bool)> cb_put_pkt_;
-  std::function<void(const Error&)> cb_excep_;
-  std::thread recv_thread_;
-  bool to_exit_recv_;
-  bool init_flag_;
-  bool start_flag_;
+  static std::shared_ptr<Input> createInput(InputType type, const RSInputParam& param,
+      double sec_to_delay, std::function<void(const uint8_t*, size_t)>& cb_feed_pkt);
 };
 
-inline Input::Input(const RSInputParam& input_param)
-  : input_param_(input_param), to_exit_recv_(false), 
-  init_flag_(false), start_flag_(false)
+inline std::shared_ptr<Input> InputFactory::createInput(InputType type, const RSInputParam& param,
+    double sec_to_delay, std::function<void(const uint8_t*, size_t)>& cb_feed_pkt)
 {
-}
+  std::shared_ptr<Input> input;
 
-inline void Input::regCallback(
-    const std::function<void(const Error&)>& cb_excep,
-    const std::function<std::shared_ptr<Buffer>(size_t)>& cb_get_pkt, 
-    const std::function<void(std::shared_ptr<Buffer>, bool)>& cb_put_pkt)
-{
-  cb_excep_   = cb_excep;
-  cb_get_pkt_ = cb_get_pkt;
-  cb_put_pkt_ = cb_put_pkt;
-}
-
-inline void Input::stop()
-{
-  if (start_flag_)
+  switch(type)
   {
-    to_exit_recv_ = true;
-    recv_thread_.join();
+    case InputType::ONLINE_LIDAR:
+      {
+        input = std::make_shared<InputSock>(param);
+      }
+      break;
 
-    start_flag_ = false;
+    default:
+      RS_ERROR << "Wrong Input Type " << type << "." << RS_REND;
+      exit(-1);
   }
-}
 
-inline void Input::pushPacket(std::shared_ptr<Buffer> pkt, bool stuffed)
-{
-  cb_put_pkt_(pkt, stuffed);
+  return input;
 }
 
 }  // namespace lidar

@@ -35,7 +35,7 @@ message(=============================================================)
 message("-- CMake run for ${COMPILER}")
 message(=============================================================)
 
-set(DRIVER_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/src)
+set(DRIVER_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/include)
 list(APPEND EXTERNAL_LIBS pthread)
 
 if(ENABLE_EPOLL_RECEIVE)

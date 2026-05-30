@@ -1,11 +1,12 @@
 #pragma once
 
-#include <rs_driver/driver/lidar_driver_impl.hpp>
-#include <rs_driver/utility/sync_queue.hpp>
+#include <lidar_driver_impl.hpp>
+#include <utility/sync_queue.hpp>
 
 #include <atomic>
 #include <cstdint>
 #include <functional>
+#include <memory>
 
 namespace robosense
 {
