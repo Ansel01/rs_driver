@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rs_driver/utility/buffer.hpp>
 
 #include <functional>
+#include <memory>
 #include <thread>
 #include <cstring>
 
