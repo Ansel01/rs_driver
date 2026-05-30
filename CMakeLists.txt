@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.5)
 
 cmake_policy(SET CMP0048 NEW) # CMake 3.6 required
 
-if(WIN32)
-  cmake_policy(SET CMP0074 NEW) # CMake 3.12 required
-endif(WIN32)
-
 project(rs_driver VERSION 1.5.19)
+
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  message(FATAL_ERROR "This trimmed rs_driver only supports Linux.")
+endif()
 
 #========================
 #  Project setup
@@ -42,39 +42,18 @@ option(COMPILE_TESTS "Build rs_driver unit tests" OFF)
 #========================
 #  Platform cross setup
 #========================
-if(MSVC)
-
-  set(COMPILER "MSVC Compiler")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od /Zi")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
-  set(CompilerFlags
-    CMAKE_CXX_FLAGS                       CMAKE_C_FLAGS
-    CMAKE_CXX_FLAGS_DEBUG                 CMAKE_C_FLAGS_DEBUG
-    CMAKE_CXX_FLAGS_RELEASE               CMAKE_C_FLAGS_RELEASE
-	  CMAKE_CXX_FLAGS_MINSIZEREL            CMAKE_C_FLAGS_MINSIZEREL
-	  CMAKE_CXX_FLAGS_RELWITHDEBINFO        CMAKE_C_FLAGS_RELWITHDEBINFO)
-
-  foreach(CompilerFlag ${CompilerFlags})
-    string(REPLACE "/MT" "/MD" ${CompilerFlag} "${${CompilerFlag}}")
-  endforeach()
-
-  add_compile_definitions(_DISABLE_EXTENDED_ALIGNED_STORAGE) # to disable a msvc error
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:100000000")
-
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-
-  if(UNIX)
-    set(COMPILER "UNIX GNU Compiler")
-  elseif(MINGW)
-    set(COMPILER "MINGW Compiler")
-  else()
-    message(FATAL_ERROR "Unsupported compiler.")
-  endif()
-
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(COMPILER "Linux GNU Compiler")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wno-unused-parameter")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(COMPILER "Linux Clang Compiler")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wno-unused-parameter")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+else()
+  message(FATAL_ERROR "Unsupported compiler. This trimmed rs_driver supports GNU or Clang on Linux.")
 endif()
 
 message(=============================================================)
@@ -90,15 +69,7 @@ set(INSTALL_CMAKE_DIR ${CMAKE_INSTALL_PREFIX}/lib/cmake)
 set(DRIVER_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/src)
 set(DRIVER_CMAKE_ROOT ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-if(WIN32)
-  list(APPEND EXTERNAL_LIBS ws2_32)
-else()
-  if (CMAKE_SYSTEM_NAME STREQUAL "QNX")
-    list(APPEND EXTERNAL_LIBS socket)
-  else()
-    list(APPEND EXTERNAL_LIBS pthread)
-  endif()
-endif(WIN32)
+list(APPEND EXTERNAL_LIBS pthread)
 
 #========================
 #  Build Features
@@ -123,14 +94,7 @@ if(${DISABLE_PCAP_PARSE})
 
 else()
 
-  if(WIN32)
-    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
-    find_package(PCAP REQUIRED)
-    include_directories(${PCAP_INCLUDE_DIR})
-    list(APPEND EXTERNAL_LIBS ${PCAP_LIBRARY})
-  else()
-    list(APPEND EXTERNAL_LIBS pcap)
-  endif(WIN32)
+  list(APPEND EXTERNAL_LIBS pcap)
 
 endif(${DISABLE_PCAP_PARSE})
 
@@ -243,4 +207,3 @@ if(UNIX AND ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
   endif(NOT TARGET uninstall)
 
 endif(UNIX AND ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
-

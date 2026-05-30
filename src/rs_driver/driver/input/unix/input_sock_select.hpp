@@ -32,13 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#ifdef __QNX__
-#define FD_SETSIZE 1024
-#include <pthread.h>
-#include <sched.h>
-#include <sys/neutrino.h>
-#include <sys/syspage.h>
-#include <rs_driver/driver/input/unix/qnx_recvmmsg.hpp>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
 
 #include <rs_driver/driver/input/input.hpp>
@@ -51,6 +46,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <memory>
 #include <cerrno>
+#include <algorithm>
 #include <cstring> 
 
 namespace robosense
@@ -264,19 +260,7 @@ failSocket:
 
 inline void InputSock::recvPacket()
 {
-#ifdef __QNX__
-  struct sched_param param;
-  param.sched_priority = 50;
-  int ret = pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
-  if (ret != 0) {
-    RS_WARNING << "Recv_thread_ Failed to set high priority (Error: " << ret << "). "
-              << "Running with normal priority." << RS_REND;
-  }
-  // 0100 = 0x04
-  unsigned run_mask = 0x04;
-  ThreadCtl(_NTO_TCTL_RUNMASK, (void *)run_mask);
-#endif
-int max_fd = std::max(std::max(fds_[0], fds_[1]), fds_[2]);
+  int max_fd = std::max(std::max(fds_[0], fds_[1]), fds_[2]);
   if (max_fd >= FD_SETSIZE) {
     RS_ERROR << "Socket fd exceeds FD_SETSIZE limit: " << FD_SETSIZE << RS_REND;
     return;

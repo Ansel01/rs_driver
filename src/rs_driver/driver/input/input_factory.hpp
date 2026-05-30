@@ -34,13 +34,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <rs_driver/driver/input/input.hpp>
 #include <rs_driver/driver/input/input_raw.hpp>
-#include <rs_driver/driver/input/input_raw_jumbo.hpp>
 #include <rs_driver/driver/input/input_sock.hpp>
-#include <rs_driver/driver/input/input_sock_jumbo.hpp>
 
 #ifndef DISABLE_PCAP_PARSE
 #include <rs_driver/driver/input/input_pcap.hpp>
-#include <rs_driver/driver/input/input_pcap_jumbo.hpp>
 #endif
 
 namespace robosense
@@ -51,11 +48,11 @@ namespace lidar
 class InputFactory
 {
 public:
-  static std::shared_ptr<Input> createInput(InputType type, const RSInputParam& param, bool isJumbo,
+  static std::shared_ptr<Input> createInput(InputType type, const RSInputParam& param,
       double sec_to_delay, std::function<void(const uint8_t*, size_t)>& cb_feed_pkt);
 };
 
-inline std::shared_ptr<Input> InputFactory::createInput(InputType type, const RSInputParam& param, bool isJumbo,
+inline std::shared_ptr<Input> InputFactory::createInput(InputType type, const RSInputParam& param,
     double sec_to_delay, std::function<void(const uint8_t*, size_t)>& cb_feed_pkt)
 {
   std::shared_ptr<Input> input;
@@ -64,20 +61,14 @@ inline std::shared_ptr<Input> InputFactory::createInput(InputType type, const RS
   {
     case InputType::ONLINE_LIDAR:
       {
-        if (isJumbo)
-          input = std::make_shared<InputSockJumbo>(param);
-        else
-          input = std::make_shared<InputSock>(param);
+        input = std::make_shared<InputSock>(param);
       }
       break;
 
 #ifndef DISABLE_PCAP_PARSE
     case InputType::PCAP_FILE:
       {
-        if (isJumbo)
-          input = std::make_shared<InputPcapJumbo>(param, sec_to_delay);
-        else
-          input = std::make_shared<InputPcap>(param, sec_to_delay);
+        input = std::make_shared<InputPcap>(param, sec_to_delay);
       }
       break;
 #endif
@@ -86,10 +77,7 @@ inline std::shared_ptr<Input> InputFactory::createInput(InputType type, const RS
       {
         std::shared_ptr<InputRaw> inputRaw;
 
-        if (isJumbo)
-          inputRaw = std::make_shared<InputRawJumbo>(param);
-        else
-          inputRaw = std::make_shared<InputRaw>(param);
+        inputRaw = std::make_shared<InputRaw>(param);
 
         cb_feed_pkt = std::bind(&InputRaw::feedPacket, inputRaw, 
             std::placeholders::_1, std::placeholders::_2);

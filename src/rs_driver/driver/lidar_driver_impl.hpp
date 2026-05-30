@@ -41,12 +41,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rs_driver/driver/input/input_factory.hpp>
 #include <rs_driver/driver/decoder/decoder_factory.hpp>
 #include <sstream>
-#ifdef __QNX__
-#include <pthread.h>
-#include <sched.h>
-#include <sys/neutrino.h>
-#include <sys/syspage.h>
-#endif
 #define MAX_POINT_CLOUD_SIZE 1700000
 
 namespace robosense
@@ -237,12 +231,11 @@ inline bool LidarDriverImpl<T_PointCloud>::init(const RSDriverParam& param)
   }
 
   double packet_duration = decoder_ptr_->getPacketDuration();
-  bool is_jumbo = isJumbo(param.lidar_type);
 
   //
   // input
   //
-  input_ptr_ = InputFactory::createInput(param.input_type, param.input_param, is_jumbo, packet_duration, cb_feed_pkt_);
+  input_ptr_ = InputFactory::createInput(param.input_type, param.input_param, packet_duration, cb_feed_pkt_);
 
   input_ptr_->regCallback(
       std::bind(&LidarDriverImpl<T_PointCloud>::runExceptionCallback, this, std::placeholders::_1),
@@ -431,17 +424,6 @@ inline void LidarDriverImpl<T_PointCloud>::internalProcessPacket(std::shared_ptr
 template <typename T_PointCloud>
 inline void LidarDriverImpl<T_PointCloud>::processPacket()
 {
-#ifdef __QNX__
-  struct sched_param param;
-  param.sched_priority = 45;
-  int ret = pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
-  if (ret != 0) {
-    RS_WARNING << "Handle_thread_ Failed to set high priority (Error: " << ret << "). "
-              << "Running with normal priority." << RS_REND;
-  }
-  unsigned run_mask = 0x08;
-  ThreadCtl(_NTO_TCTL_RUNMASK, (void *)run_mask);
-#endif
   std::vector<std::shared_ptr<Buffer>> pkt_batch;
   pkt_batch.reserve(50); 
   

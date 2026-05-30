@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
 #if ENABLE_IMU_PARSE
   param.input_param.imu_port = 6688;                         ///< Set the lidar imu port number, the default is 0
 #endif
-  param.lidar_type = LidarType::RSAIRY;                          ///< Set the lidar type. Make sure this type is correct
+  param.lidar_type = LidarType::RSHELIOS;                          ///< Set the lidar type. Make sure this type is correct
   param.input_param.pcap_rate = 1.0;
   param.print();
   

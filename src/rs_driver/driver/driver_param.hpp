@@ -44,76 +44,23 @@ namespace lidar
 {
 enum LidarType  ///< LiDAR type
 {
-  // mechanical
-  RS_MECH = 0x01,
-  RS16 = RS_MECH,
-  RS32,
-  RSBP,
-  RSAIRY,
-  RSFAIRY,
-  RSHELIOS,
-  RSHELIOS_16P,
-  RS128,
-  RS80,
-  RS48,
-  RSP128,
-  RSP80,
-  RSP48,
-
-  // mems
-  RS_MEMS = 0x20,
-  RSM1 = RS_MEMS,
-  RSM2,
-  RSM3,
-  RSE1,
-  RSMX,
-
-  // EMX
-  RSEMX = 0x71,
-
-  // jumbo
-  RS_JUMBO = 0x100,
-  RSM1_JUMBO = RS_JUMBO + RSM1,
+  RSHELIOS = 0x01,
 };
 
 inline bool isMech(LidarType type)
 {
-  return ((LidarType::RS_MECH <= type) && (type < LidarType::RS_MEMS));
+  return type == LidarType::RSHELIOS;
 }
 
 inline bool isMems (LidarType type)
 {
-  return ((LidarType::RS_MEMS <= type) && (type < LidarType::RS_JUMBO));
-}
-
-inline bool isJumbo (LidarType type)
-{
-  return (LidarType::RS_JUMBO <= type);
+  return false;
 }
 
 inline std::string lidarTypeToStr(const LidarType& type)
 {
     static const std::unordered_map<LidarType, std::string> lidarTypeMap = {
-        {LidarType::RS16, "RS16"},
-        {LidarType::RS32, "RS32"},
-        {LidarType::RSBP, "RSBP"},
-        {LidarType::RSAIRY, "RSAIRY"},
-        {LidarType::RSFAIRY, "RSFAIRY"},
         {LidarType::RSHELIOS, "RSHELIOS"},
-        {LidarType::RSHELIOS_16P, "RSHELIOS_16P"},
-        {LidarType::RS128, "RS128"},
-        {LidarType::RS80, "RS80"},
-        {LidarType::RS48, "RS48"},
-        {LidarType::RSP128, "RSP128"},
-        {LidarType::RSP80, "RSP80"},
-        {LidarType::RSP48, "RSP48"},
-        {LidarType::RSM1, "RSM1"},
-        {LidarType::RSM2, "RSM2"},
-        {LidarType::RSM3, "RSM3"},
-        {LidarType::RSE1, "RSE1"},
-        {LidarType::RSMX, "RSMX"},
-        {LidarType::RSEMX, "RSEMX"},
-        {LidarType::RSM1_JUMBO, "RSM1_JUMBO"},
     };
 
     auto it = lidarTypeMap.find(type);
@@ -129,26 +76,7 @@ inline std::string lidarTypeToStr(const LidarType& type)
 inline LidarType strToLidarType(const std::string& type)
 {
     static const std::unordered_map<std::string, LidarType> strLidarTypeMap = {
-        {"RS16", LidarType::RS16},
-        {"RS32", LidarType::RS32},
-        {"RSBP", LidarType::RSBP},
         {"RSHELIOS", LidarType::RSHELIOS},
-        {"RSHELIOS_16P", LidarType::RSHELIOS_16P},
-        {"RS128", LidarType::RS128},
-        {"RS80", LidarType::RS80},
-        {"RS48", LidarType::RS48},
-        {"RSP128", LidarType::RSP128},
-        {"RSP80", LidarType::RSP80},
-        {"RSP48", LidarType::RSP48},
-        {"RSM1", LidarType::RSM1},
-        {"RSM2", LidarType::RSM2},
-        {"RSM3", LidarType::RSM3},
-        {"RSE1", LidarType::RSE1},
-        {"RSMX", LidarType::RSMX},
-        {"RSEMX", LidarType::RSEMX},
-        {"RSAIRY", LidarType::RSAIRY},
-        {"RSFAIRY", LidarType::RSFAIRY},
-        {"RSM1_JUMBO", LidarType::RSM1_JUMBO},
     };
 
     auto it = strLidarTypeMap.find(type);
@@ -156,9 +84,7 @@ inline LidarType strToLidarType(const std::string& type)
         return it->second;
     } else {
       RS_ERROR << "Wrong lidar type: " << type << RS_REND;
-      RS_ERROR << "Please give correct type: RS16, RS32, RSBP, RSHELIOS, RSHELIOS_16P, RS48, RS80, RS128, RSP128, RSP80, RSP48, "
-              << "RSM1, RSM1_JUMBO, RSM2,RSM3, RSE1, RSMX, RSEMX, RSAIRY, RSFAIRY." 
-              << RS_REND;
+      RS_ERROR << "Please give correct type: RSHELIOS." << RS_REND;
       exit(-1);
     }
 }
@@ -307,7 +233,7 @@ struct RSInputParam  ///< The LiDAR input parameter
 
 struct RSDriverParam  ///< The LiDAR driver parameter
 {
-  LidarType lidar_type = LidarType::RS16;  ///< Lidar type
+  LidarType lidar_type = LidarType::RSHELIOS;  ///< Lidar type
   InputType input_type = InputType::ONLINE_LIDAR; ///< Input type
   std::string frame_id = "rslidar";  ///< The frame id of LiDAR mesage
   RSInputParam input_param;          ///< Input parameter

@@ -36,11 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // define ntohs()
 // 
-#ifdef _WIN32
-#include <ws2tcpip.h>
-#else //__linux__
 #include <arpa/inet.h>
-#endif
 
 inline int16_t RS_SWAP_INT16(int16_t value)
 {
@@ -101,5 +97,4 @@ inline float convertUint32ToFloat(uint32_t byteArray) {
 
 }
 }
-
 

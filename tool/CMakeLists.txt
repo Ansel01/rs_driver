@@ -15,16 +15,6 @@ endif()
 
 if(${COMPILE_TOOL_VIEWER})
 
-if(WIN32)
-  cmake_policy(SET CMP0074 NEW)
-  set(OPENNI_ROOT "C:\\Program Files\\OpenNI2")
-  set(OPENNI_LIBRARY "${OPENNI_ROOT}\\Lib\\OpenNI2.lib")
-  set(OPENNI_INCLUDE_DIRS "${OPENNI_ROOT}\\Include\\")
-  file(COPY ${OPENNI_ROOT}\\Redist\\OpenNI2.dll DESTINATION ${PROJECT_BINARY_DIR}\\Release)
-  file(COPY ${OPENNI_ROOT}\\Redist\\OpenNI2.dll DESTINATION ${PROJECT_BINARY_DIR}\\Debug)
-endif(WIN32)
-
-
 find_package(PCL COMPONENTS common visualization io QUIET REQUIRED)
 # find_package(PCL 1.14  COMPONENTS common visualization io QUIET REQUIRED)
 add_definitions(${PCL_DEFINITIONS})
@@ -61,4 +51,3 @@ target_link_libraries(rs_driver_pcdsaver
                     ${EXTERNAL_LIBS})
 
 endif(${COMPILE_TOOL_PCDSAVER})
-

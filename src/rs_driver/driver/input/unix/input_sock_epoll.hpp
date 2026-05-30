@@ -106,7 +106,7 @@ inline bool InputSock::init()
       goto failDifop;
 
     struct epoll_event ev;
-    ev.data.fd = difop_fd;
+    ev.data.fd = imu_fd;
     ev.events = EPOLLIN;  // level-triggered
     epoll_ctl(epfd, EPOLL_CTL_ADD, difop_fd, &ev);
   }
