@@ -241,11 +241,6 @@ inline bool LidarDriverImpl<T_PointCloud>::init(const RSDriverParam& param)
       std::bind(&LidarDriverImpl<T_PointCloud>::runExceptionCallback, this, std::placeholders::_1),
       std::bind(&LidarDriverImpl<T_PointCloud>::packetGet, this, std::placeholders::_1),
       std::bind(&LidarDriverImpl<T_PointCloud>::packetPut, this, std::placeholders::_1, std::placeholders::_2));
-  if (param.input_type == InputType::PCAP_FILE)
-  {
-    input_ptr_->regPcapSplitFrameCallback(
-        std::bind(&LidarDriverImpl<T_PointCloud>::isNewFrame, this, std::placeholders::_1));
-  }
   if (!input_ptr_->init())
   {
     goto failInputInit;

@@ -51,8 +51,6 @@ enum ErrCode
 {
   // info
   ERRCODE_SUCCESS         = 0x00,  ///< Normal Status
-  ERRCODE_PCAPREPEAT      = 0x01,  ///< Reach file end, and play PCAP file again.
-  ERRCODE_PCAPEXIT        = 0x02,  ///< Reach file end, and exit parsing PCAP file
 
   // warning
   ERRCODE_MSOPTIMEOUT     = 0x40,  ///< Timeout (1s) of receiving MSOP Packets
@@ -68,13 +66,9 @@ enum ErrCode
   ERRCODE_WRONGCRC32      = 0x4A,  ///< Wrong CRC32 value of MSOP Packet
   ERRCODE_WRONGIMULEN   = 0x4B,  ///< IMU Packet length is wrong
   ERRCODE_WRONGIMUID    = 0x4C,  ///< IMU Packet ID is wrong
-  ERRCODE_WRONGMSOPPCAPPARSE  = 0x4D,   ///< Parse msop data frome pcap file failed
-  ERRCODE_WRONGDIFOPPCAPPARSE  = 0x4E,   ///< Parse difop data frome pcap file failed
-  ERRCODE_WRONGIMUPCAPPARSE  = 0x4F,   ///< Parse imu data frome pcap file failed
 
   // error
   ERRCODE_STARTBEFOREINIT = 0x80,  ///< User calls start() before init()
-  ERRCODE_PCAPWRONGPATH   = 0x81,  ///< Path of pcap file is wrong
   ERRCODE_POINTCLOUDNULL  = 0x82,   ///< User provided PointCloud buffer is invalid
   ERRCODE_IMUDATANULL  = 0x83,   ///< User provided ImuData buffer is invalid
 };
@@ -109,12 +103,6 @@ struct Error
   {
     switch (error_code)
     {
-      // info
-      case ERRCODE_PCAPREPEAT:
-        return "Info_PcapRepeat";
-      case ERRCODE_PCAPEXIT:
-        return "Info_PcapExit";
-
       // warning
       case ERRCODE_MSOPTIMEOUT:
         return "ERRCODE_MSOPTIMEOUT";
@@ -142,18 +130,10 @@ struct Error
         return "ERRCODE_WRONGIMULEN";
       case ERRCODE_WRONGIMUID:
         return "ERRCODE_WRONGIMUID";
-      case ERRCODE_WRONGMSOPPCAPPARSE:
-        return "ERRCODE_WRONGMSOPPCAPPARSE";
-      case ERRCODE_WRONGDIFOPPCAPPARSE:
-        return "ERRCODE_WRONGDIFOPPCAPPARSE";
-      case ERRCODE_WRONGIMUPCAPPARSE:
-        return "ERRCODE_WRONGIMUPCAPPARSE";
 
       // error
       case ERRCODE_STARTBEFOREINIT:
         return "ERRCODE_STARTBEFOREINIT";
-      case ERRCODE_PCAPWRONGPATH:
-        return "ERRCODE_PCAPWRONGPATH";
       case ERRCODE_POINTCLOUDNULL:
         return "ERRCODE_POINTCLOUDNULL";
       case ERRCODE_IMUDATANULL:

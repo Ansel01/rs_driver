@@ -90,9 +90,7 @@ inline LidarType strToLidarType(const std::string& type)
 }
 enum InputType
 {
-  ONLINE_LIDAR = 1,
-  PCAP_FILE,
-  RAW_PACKET
+  ONLINE_LIDAR = 1
 };
 
 inline std::string inputTypeToStr(const InputType& type)
@@ -102,12 +100,6 @@ inline std::string inputTypeToStr(const InputType& type)
   {
     case InputType::ONLINE_LIDAR:
       str = "ONLINE_LIDAR";
-      break;
-    case InputType::PCAP_FILE:
-      str = "PCAP_FILE";
-      break;
-    case InputType::RAW_PACKET:
-      str = "RAW_PACKET";
       break;
     default:
       str = "ERROR";

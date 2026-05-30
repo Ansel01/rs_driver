@@ -34,6 +34,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <rs_driver/driver/lidar_driver_impl.hpp>
 #include <rs_driver/msg/packet.hpp>
+#include <rs_driver/utility/sync_queue.hpp>
+
+#include <functional>
+#include <utility>
 
 namespace robosense
 {
@@ -53,10 +57,15 @@ public:
   /**
    * @brief Constructor, instanciate the driver pointer
    */
-  LidarDriver() 
+  LidarDriver()
     : driver_ptr_(std::make_shared<LidarDriverImpl<T_PointCloud>>())
   {
+    useDefaultPointCloudQueue();
+    useDefaultExceptionHandler();
   }
+
+  LidarDriver(const LidarDriver&) = delete;
+  LidarDriver& operator=(const LidarDriver&) = delete;
 
   /**
    * @brief Register the lidar point cloud callback function to driver. When point cloud is ready, this function will be
@@ -67,6 +76,42 @@ public:
       const std::function<void(std::shared_ptr<T_PointCloud>)>& cb_put_cloud)
   {
     driver_ptr_->regPointCloudCallback(cb_get_cloud, cb_put_cloud);
+  }
+
+  inline void useDefaultPointCloudQueue()
+  {
+    driver_ptr_->regPointCloudCallback(
+        std::bind(&LidarDriver<T_PointCloud>::getReusablePointCloud, this),
+        std::bind(&LidarDriver<T_PointCloud>::putReadyPointCloud, this, std::placeholders::_1));
+  }
+
+  inline void useDefaultExceptionHandler()
+  {
+    driver_ptr_->regExceptionCallback(
+        std::bind(&LidarDriver<T_PointCloud>::defaultExceptionHandler, this, std::placeholders::_1));
+  }
+
+  inline bool consumePointCloud(const std::shared_ptr<T_PointCloud>& cloud, unsigned int usec = 1000000)
+  {
+    if (!cloud)
+    {
+      return false;
+    }
+
+    std::shared_ptr<T_PointCloud> ready_cloud = waitPointCloud(usec);
+    if (!ready_cloud)
+    {
+      return false;
+    }
+
+    *cloud = std::move(*ready_cloud);
+    releasePointCloud(ready_cloud);
+    return true;
+  }
+
+  inline size_t readyPointCloudSize() const
+  {
+    return ready_cloud_queue_.size();
   }
   /**
    * @brief Register the imu data callback function to driver. When imu data is ready, this function will be
@@ -166,6 +211,37 @@ public:
   }
 
 private:
+  inline std::shared_ptr<T_PointCloud> waitPointCloud(unsigned int usec = 1000000)
+  {
+    return ready_cloud_queue_.popWait(usec);
+  }
+
+  inline void releasePointCloud(const std::shared_ptr<T_PointCloud>& cloud)
+  {
+    if (cloud)
+    {
+      free_cloud_queue_.push(cloud);
+    }
+  }
+
+  inline void defaultExceptionHandler(const Error& error)
+  {
+    RS_WARNING << error.toString() << RS_REND;
+  }
+
+  inline std::shared_ptr<T_PointCloud> getReusablePointCloud()
+  {
+    std::shared_ptr<T_PointCloud> cloud = free_cloud_queue_.pop();
+    return cloud ? cloud : std::make_shared<T_PointCloud>();
+  }
+
+  inline void putReadyPointCloud(std::shared_ptr<T_PointCloud> cloud)
+  {
+    ready_cloud_queue_.push(cloud);
+  }
+
+  SyncQueue<std::shared_ptr<T_PointCloud>> free_cloud_queue_;
+  SyncQueue<std::shared_ptr<T_PointCloud>> ready_cloud_queue_;
   std::shared_ptr<LidarDriverImpl<T_PointCloud>> driver_ptr_;  ///< The driver pointer
 };
 

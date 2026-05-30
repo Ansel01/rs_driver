@@ -33,12 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include <rs_driver/driver/input/input.hpp>
-#include <rs_driver/driver/input/input_raw.hpp>
 #include <rs_driver/driver/input/input_sock.hpp>
-
-#ifndef DISABLE_PCAP_PARSE
-#include <rs_driver/driver/input/input_pcap.hpp>
-#endif
 
 namespace robosense
 {
@@ -65,36 +60,8 @@ inline std::shared_ptr<Input> InputFactory::createInput(InputType type, const RS
       }
       break;
 
-#ifndef DISABLE_PCAP_PARSE
-    case InputType::PCAP_FILE:
-      {
-        input = std::make_shared<InputPcap>(param, sec_to_delay);
-      }
-      break;
-#endif
-
-    case InputType::RAW_PACKET:
-      {
-        std::shared_ptr<InputRaw> inputRaw;
-
-        inputRaw = std::make_shared<InputRaw>(param);
-
-        cb_feed_pkt = std::bind(&InputRaw::feedPacket, inputRaw, 
-            std::placeholders::_1, std::placeholders::_2);
-
-        input = inputRaw;
-      }
-      break;
-
     default:
-
       RS_ERROR << "Wrong Input Type " << type << "." << RS_REND;
-
-      if (type == InputType::PCAP_FILE) 
-      {
-        RS_ERROR << "To use InputType::PCAP_FILE, please do not specify the make option DISABLE_PCAP_PARSE." << RS_REND;
-      }
-
       exit(-1);
   }
 

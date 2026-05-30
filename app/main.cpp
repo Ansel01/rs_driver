@@ -30,48 +30,54 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWIS
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************************************************************/
 
-#pragma once
+#include <rs_driver/api/lidar_driver.hpp>
 
-#include <rs_driver/driver/input/input.hpp>
+#ifdef ENABLE_PCL_POINTCLOUD
+#include <rs_driver/msg/pcl_point_cloud_msg.hpp>
+#else
+#include <rs_driver/msg/point_cloud_msg.hpp>
+#endif
 
-namespace robosense
+using namespace robosense::lidar;
+
+using PointT = PointXYZI;
+using PointCloudMsg = PointCloudT<PointT>;
+
+int main(int argc, char* argv[])
 {
-namespace lidar
-{
-class InputRaw : public Input
-{
-public:
+  (void)argc;
+  (void)argv;
 
-  virtual bool init(){return true;}
-  virtual bool start(){return true;};
-  virtual void stop(){}
-  virtual ~InputRaw(){}
+  RS_TITLE << "------------------------------------------------------" << RS_REND;
+  RS_TITLE << "            RS_Driver Core Version: v" << getDriverVersion() << RS_REND;
+  RS_TITLE << "------------------------------------------------------" << RS_REND;
 
-  void feedPacket(const uint8_t* data, size_t size);
+  RSDriverParam param;
+  param.input_type = InputType::ONLINE_LIDAR;
+  param.lidar_type = LidarType::RSHELIOS;
+  param.input_param.msop_port = 6699;
+  param.input_param.difop_port = 7788;
+  param.print();
+   
+  LidarDriver<PointCloudMsg> driver;
 
-  InputRaw(const RSInputParam& input_param);
+  if (!driver.init(param))
+  {
+    RS_ERROR << "Driver Initialize Error..." << RS_REND;
+    return -1;
+  }
 
-protected:
-  size_t pkt_buf_len_;
-  size_t raw_offset_;
-  size_t raw_tail_;
-};
+  driver.start();
+  RS_DEBUG << "RoboSense Lidar-Driver Linux main start......" << RS_REND;
 
-inline InputRaw::InputRaw(const RSInputParam& input_param)
-  : Input(input_param), pkt_buf_len_(ETH_LEN), 
-    raw_offset_(0), raw_tail_(0)
-{
-  raw_offset_ += input_param.user_layer_bytes;
-  raw_tail_   += input_param.tail_layer_bytes;
+  while (true)
+  {
+    auto data = std::make_shared<PointCloudMsg>();
+    if (!driver.consumePointCloud(data))
+    {
+      continue;
+    }
+
+    RS_MSG << "msg: " << data->seq << " point cloud size: " << data->points.size() << RS_REND;
+  }
 }
-
-inline void InputRaw::feedPacket(const uint8_t* data, size_t size)
-{
-  std::shared_ptr<Buffer> pkt = cb_get_pkt_(pkt_buf_len_);
-  memcpy(pkt->data(), data + raw_offset_, size - raw_offset_ - raw_tail_);
-  pkt->setData(0, size - raw_offset_ - raw_tail_);
-  pushPacket(pkt);
-}
-
-}  // namespace lidar
-}  // namespace robosense
