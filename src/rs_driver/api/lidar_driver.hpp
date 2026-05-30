@@ -36,6 +36,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rs_driver/msg/packet.hpp>
 #include <rs_driver/utility/sync_queue.hpp>
 
+#include <atomic>
+#include <cstdint>
 #include <functional>
 #include <utility>
 
@@ -58,10 +60,18 @@ public:
    * @brief Constructor, instanciate the driver pointer
    */
   LidarDriver()
-    : driver_ptr_(std::make_shared<LidarDriverImpl<T_PointCloud>>())
+    : dropped_cloud_count_(0)
+    , initialized_(false)
+    , started_(false)
+    , driver_ptr_(std::make_shared<LidarDriverImpl<T_PointCloud>>())
   {
     useDefaultPointCloudQueue();
     useDefaultExceptionHandler();
+  }
+
+  ~LidarDriver()
+  {
+    stop();
   }
 
   LidarDriver(const LidarDriver&) = delete;
@@ -87,8 +97,25 @@ public:
 
   inline void useDefaultExceptionHandler()
   {
-    driver_ptr_->regExceptionCallback(
-        std::bind(&LidarDriver<T_PointCloud>::defaultExceptionHandler, this, std::placeholders::_1));
+    cb_exception_ = std::bind(&LidarDriver<T_PointCloud>::defaultExceptionHandler, this, std::placeholders::_1);
+    driver_ptr_->regExceptionCallback(cb_exception_);
+  }
+
+  inline bool getPointCloud(std::shared_ptr<T_PointCloud>& cloud, unsigned int usec = 1000000)
+  {
+    cloud = ready_cloud_queue_.popWait(usec);
+    return static_cast<bool>(cloud);
+  }
+
+  inline void recyclePointCloud(std::shared_ptr<T_PointCloud>& cloud)
+  {
+    if (!cloud)
+    {
+      return;
+    }
+
+    pushFreePointCloud(cloud);
+    cloud.reset();
   }
 
   inline bool consumePointCloud(const std::shared_ptr<T_PointCloud>& cloud, unsigned int usec = 1000000)
@@ -98,15 +125,30 @@ public:
       return false;
     }
 
-    std::shared_ptr<T_PointCloud> ready_cloud = waitPointCloud(usec);
-    if (!ready_cloud)
+    std::shared_ptr<T_PointCloud> ready_cloud;
+    if (!getPointCloud(ready_cloud, usec))
     {
       return false;
     }
 
     *cloud = std::move(*ready_cloud);
-    releasePointCloud(ready_cloud);
+    recyclePointCloud(ready_cloud);
     return true;
+  }
+
+  inline bool isInitialized() const
+  {
+    return initialized_.load(std::memory_order_acquire);
+  }
+
+  inline bool isStarted() const
+  {
+    return started_.load(std::memory_order_acquire);
+  }
+
+  inline uint64_t droppedPointCloudCount() const
+  {
+    return dropped_cloud_count_.load(std::memory_order_acquire);
   }
 
   inline size_t readyPointCloudSize() const
@@ -140,7 +182,9 @@ public:
    */
   inline void regExceptionCallback(const std::function<void(const Error&)>& cb_excep)
   {
-    driver_ptr_->regExceptionCallback(cb_excep);
+    cb_exception_ = cb_excep ? cb_excep :
+        std::bind(&LidarDriver<T_PointCloud>::defaultExceptionHandler, this, std::placeholders::_1);
+    driver_ptr_->regExceptionCallback(cb_exception_);
   }
 
   /**
@@ -151,7 +195,14 @@ public:
    */
   inline bool init(const RSDriverParam& param)
   {
-    return driver_ptr_->init(param);
+    if (initialized_.load(std::memory_order_acquire))
+    {
+      return true;
+    }
+
+    bool ok = driver_ptr_->init(param);
+    initialized_.store(ok, std::memory_order_release);
+    return ok;
   }
 
   /**
@@ -160,7 +211,20 @@ public:
    */
   inline bool start()
   {
-    return driver_ptr_->start();
+    if (started_.load(std::memory_order_acquire))
+    {
+      return true;
+    }
+
+    if (!initialized_.load(std::memory_order_acquire))
+    {
+      reportException(Error(ERRCODE_STARTBEFOREINIT));
+      return false;
+    }
+
+    bool ok = driver_ptr_->start();
+    started_.store(ok, std::memory_order_release);
+    return ok;
   }
 
   /**
@@ -207,20 +271,38 @@ public:
    */
   inline void stop()
   {
+    if (!started_.load(std::memory_order_acquire))
+    {
+      return;
+    }
+
     driver_ptr_->stop();
+    started_.store(false, std::memory_order_release);
   }
 
 private:
   inline std::shared_ptr<T_PointCloud> waitPointCloud(unsigned int usec = 1000000)
   {
-    return ready_cloud_queue_.popWait(usec);
+    std::shared_ptr<T_PointCloud> ready_cloud;
+    getPointCloud(ready_cloud, usec);
+    return ready_cloud;
   }
 
   inline void releasePointCloud(const std::shared_ptr<T_PointCloud>& cloud)
   {
-    if (cloud)
+    if (!cloud)
     {
-      free_cloud_queue_.push(cloud);
+      return;
+    }
+
+    pushFreePointCloud(cloud);
+  }
+
+  inline void reportException(const Error& error)
+  {
+    if (cb_exception_)
+    {
+      cb_exception_(error);
     }
   }
 
@@ -237,11 +319,44 @@ private:
 
   inline void putReadyPointCloud(std::shared_ptr<T_PointCloud> cloud)
   {
-    ready_cloud_queue_.push(cloud);
+    pushReadyPointCloud(cloud);
+  }
+
+  inline void pushReadyPointCloud(const std::shared_ptr<T_PointCloud>& cloud)
+  {
+    if (!cloud)
+    {
+      return;
+    }
+
+    if (ready_cloud_queue_.push(cloud) == static_cast<size_t>(-1))
+    {
+      dropped_cloud_count_.fetch_add(1, std::memory_order_acq_rel);
+      reportException(Error(ERRCODE_CLOUDOVERFLOW));
+      pushFreePointCloud(cloud);
+    }
+  }
+
+  inline void pushFreePointCloud(const std::shared_ptr<T_PointCloud>& cloud)
+  {
+    if (!cloud)
+    {
+      return;
+    }
+
+    if (free_cloud_queue_.push(cloud) == static_cast<size_t>(-1))
+    {
+      dropped_cloud_count_.fetch_add(1, std::memory_order_acq_rel);
+      reportException(Error(ERRCODE_CLOUDOVERFLOW));
+    }
   }
 
   SyncQueue<std::shared_ptr<T_PointCloud>> free_cloud_queue_;
   SyncQueue<std::shared_ptr<T_PointCloud>> ready_cloud_queue_;
+  std::atomic<uint64_t> dropped_cloud_count_;
+  std::atomic<bool> initialized_;
+  std::atomic<bool> started_;
+  std::function<void(const Error&)> cb_exception_;
   std::shared_ptr<LidarDriverImpl<T_PointCloud>> driver_ptr_;  ///< The driver pointer
 };
 
