@@ -35,6 +35,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pcl/common/io.h>
 #include <pcl/point_types.h>
 
+#include <cstdint>
+#include <string>
+
+namespace robosense
+{
+namespace lidar
+{
+
 typedef pcl::PointXYZI PointXYZI;
 
 struct PointXYZIRT
@@ -45,14 +53,6 @@ struct PointXYZIRT
   double timestamp;
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;
-
-POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIRT, 
-    (float, x, x)
-    (float, y, y)
-    (float, z, z)
-    (float, intensity, intensity)
-    (std::uint16_t, ring, ring)
-    (double, timestamp, timestamp))
 
 template <typename T_Point>
 class PointCloudT : public pcl::PointCloud<T_Point>
@@ -66,3 +66,13 @@ public:
   std::string frame_id = "";  ///< Point cloud frame id
 };
 
+}  // namespace lidar
+}  // namespace robosense
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(robosense::lidar::PointXYZIRT,
+    (float, x, x)
+    (float, y, y)
+    (float, z, z)
+    (float, intensity, intensity)
+    (std::uint16_t, ring, ring)
+    (double, timestamp, timestamp))

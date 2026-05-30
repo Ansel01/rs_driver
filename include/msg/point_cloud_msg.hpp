@@ -32,8 +32,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <vector>
+#include <cstdint>
 #include <string>
+#include <vector>
+
+namespace robosense
+{
+namespace lidar
+{
 
 #pragma pack(push, 1)
 struct PointXYZI
@@ -78,3 +84,5 @@ public:
   VectorT points;
 };
 
+}  // namespace lidar
+}  // namespace robosense
